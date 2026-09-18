@@ -26,31 +26,21 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, is
 
   const shouldShow = isMobile || forceVisible;
 
-  const resetJoystick = () => {
+  const resetJoystick = React.useCallback(() => {
+    if (touchIdRef.current !== null && joystickBaseRef.current) {
+      try {
+        if (joystickBaseRef.current.hasPointerCapture(touchIdRef.current)) {
+          joystickBaseRef.current.releasePointerCapture(touchIdRef.current);
+        }
+      } catch (_) {}
+    }
     touchIdRef.current = null;
     setStickPos({ x: 0, y: 0 });
-    inputManager.touchMove = { x: 0, z: 0 };
-  };
-  useEffect(() => {
-    window.addEventListener('blur', resetJoystick);
-    return () => { window.removeEventListener('blur', resetJoystick); inputManager.touchMove = { x: 0, z: 0 }; };
+    inputManager.touchMove.x = 0;
+    inputManager.touchMove.z = 0;
   }, [inputManager]);
-  const handleJoystickStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (touchIdRef.current !== null) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    touchIdRef.current = e.pointerId;
-    inputManager.aimWithMouse = false;
-    updateJoystickPos(e.clientX, e.clientY);
-  };
-  const handleJoystickMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerId === touchIdRef.current) updateJoystickPos(e.clientX, e.clientY);
-  };
-  const handleJoystickEnd = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerId === touchIdRef.current) resetJoystick();
-  };
 
-  const updateJoystickPos = (clientX: number, clientY: number) => {
+  const updateJoystickPos = React.useCallback((clientX: number, clientY: number) => {
     if (!joystickBaseRef.current) return;
     const rect = joystickBaseRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -71,6 +61,79 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, is
     setStickPos({ x: clampedX * 136 / rect.width, y: clampedY * 136 / rect.width });
     inputManager.touchMove.x = clampedX / maxDist;
     inputManager.touchMove.z = clampedY / maxDist;
+  }, [inputManager]);
+
+  // Global window listeners to ensure joystick NEVER stays stuck
+  useEffect(() => {
+    const handleGlobalPointerMove = (e: PointerEvent) => {
+      if (touchIdRef.current !== null && e.pointerId === touchIdRef.current) {
+        updateJoystickPos(e.clientX, e.clientY);
+      }
+    };
+
+    const handleGlobalPointerUp = (e: PointerEvent) => {
+      if (touchIdRef.current !== null && e.pointerId === touchIdRef.current) {
+        resetJoystick();
+      }
+    };
+
+    const handleGlobalTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        resetJoystick();
+        inputManager.touchSprint = false;
+        inputManager.touchJump = false;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        resetJoystick();
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true });
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
+    window.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleGlobalTouchEnd, { passive: true });
+    window.addEventListener('blur', resetJoystick);
+    window.addEventListener('contextmenu', resetJoystick);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalPointerMove);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+      window.removeEventListener('touchcancel', handleGlobalTouchEnd);
+      window.removeEventListener('blur', resetJoystick);
+      window.removeEventListener('contextmenu', resetJoystick);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      inputManager.touchMove.x = 0;
+      inputManager.touchMove.z = 0;
+    };
+  }, [resetJoystick, updateJoystickPos, inputManager]);
+
+  const handleJoystickStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    touchIdRef.current = e.pointerId;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+    inputManager.aimWithMouse = false;
+    updateJoystickPos(e.clientX, e.clientY);
+  };
+
+  const handleJoystickMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerId === touchIdRef.current) {
+      updateJoystickPos(e.clientX, e.clientY);
+    }
+  };
+
+  const handleJoystickEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerId === touchIdRef.current) {
+      resetJoystick();
+    }
   };
 
   return (

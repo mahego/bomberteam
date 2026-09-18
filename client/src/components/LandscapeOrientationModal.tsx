@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, RotateCw } from 'lucide-react';
+import { InstallPromptModal } from './InstallPromptModal';
 
 export const LandscapeOrientationModal: React.FC = () => {
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -103,25 +105,52 @@ export const LandscapeOrientationModal: React.FC = () => {
         Para disfrutar de la mejor experiencia de combate multijugador 3D con controles y HUD táctil completo, gira tu teléfono a modo <strong>horizontal (Landscape)</strong>.
       </p>
 
-      <button
-        onClick={handleRequestLandscape}
-        style={{
-          background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-          color: '#ffffff',
-          fontWeight: 800,
-          fontSize: '14px',
-          padding: '12px 24px',
-          borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 0 20px rgba(99, 102, 241, 0.6)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span>🔄 Forzar Modo Horizontal</span>
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
+        <button
+          onClick={handleRequestLandscape}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+            color: '#ffffff',
+            fontWeight: 800,
+            fontSize: '14px',
+            padding: '12px 20px',
+            borderRadius: '14px',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 0 20px rgba(99, 102, 241, 0.6)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          <span>🔄 Pantalla Completa</span>
+        </button>
+
+        <button
+          onClick={() => setShowInstall(true)}
+          style={{
+            width: '100%',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: '#e0e7ff',
+            fontWeight: 700,
+            fontSize: '13px',
+            padding: '10px 16px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          <span>📲 Instalar como WebApp</span>
+        </button>
+      </div>
+
+      <InstallPromptModal isOpen={showInstall} onClose={() => setShowInstall(false)} />
 
       <style>{`
         @keyframes rotate-phone-anim {

@@ -105,15 +105,30 @@ export class GameEngine {
 
   private setupListeners() {
     window.addEventListener('resize', this.onResize);
+    window.addEventListener('orientationchange', this.onResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.onResize);
+    }
     window.addEventListener('mousemove', this.onMouseMove);
     this.inputManager.onAction = this.flushImmediateAction;
   }
 
   private onResize = () => {
     if (!this.renderer || !this.camera) return;
-    const width = this.container.clientWidth || window.innerWidth;
-    const height = this.container.clientHeight || window.innerHeight;
-    this.camera.aspect = width / height;
+    const width = window.visualViewport ? Math.round(window.visualViewport.width) : (this.container.clientWidth || window.innerWidth);
+    const height = window.visualViewport ? Math.round(window.visualViewport.height) : (this.container.clientHeight || window.innerHeight);
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+
+    // Adapt vertical FOV on mobile landscape to prevent narrow/cramped viewing angle
+    if (aspect > 1.8 && height < 520) {
+      this.camera.fov = 57;
+    } else if (aspect > 1.5 && height < 600) {
+      this.camera.fov = 54;
+    } else {
+      this.camera.fov = 50;
+    }
+
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.pipeline.resize(width, height);
@@ -581,6 +596,10 @@ export class GameEngine {
       cancelAnimationFrame(this.animFrameId);
     }
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('orientationchange', this.onResize);
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.onResize);
+    }
     window.removeEventListener('mousemove', this.onMouseMove);
     this.inputManager.destroy();
     if (this.ws) {

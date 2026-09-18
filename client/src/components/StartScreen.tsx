@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterType } from '@shared/types';
 import { soundManager } from '../engine/SoundEffects';
-import { Sparkles, Dices, Trophy, Swords, Zap, Volume2, VolumeX } from 'lucide-react';
+import { Sparkles, Dices, Trophy, Swords, Zap, Volume2, VolumeX, Maximize, Minimize, Download } from 'lucide-react';
+import { toggleFullscreen, isFullscreen, isStandalone } from '../utils/pwa';
+import { InstallPromptModal } from './InstallPromptModal';
 
 interface StartScreenProps {
   onPlay: (name: string, character: CharacterType, color: string) => void;
@@ -37,6 +39,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
   const [character, setCharacter] = useState<CharacterType>('robot');
   const [color, setColor] = useState('#3b82f6');
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [fullscreen, setFullscreen] = useState(isFullscreen());
 
   // Anonymous local storage progression
   const [stats, setStats] = useState({ kills: 0, matches: 0, score: 0 });
@@ -62,6 +66,15 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
         setStats(JSON.parse(savedStats));
       } catch (e) {}
     }
+
+    const onFullscreenChange = () => setFullscreen(isFullscreen());
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+    };
   }, []);
 
   const randomizeName = () => {
@@ -89,8 +102,17 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
     soundManager.playClick();
   };
 
+  const handleToggleFullscreen = async () => {
+    soundManager.playClick();
+    const res = await toggleFullscreen();
+    setFullscreen(res);
+  };
+
   return (
     <div className="start-screen-wrapper">
+      {/* PWA Install Modal */}
+      <InstallPromptModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
+
       {/* Background animated floating bombs */}
       <div style={{
         position: 'absolute',
@@ -107,8 +129,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
 
       {/* Main Glass Card */}
       <div className="glass-panel start-card">
-        {/* Top Sound Toggle & Stats */}
-        <div className="start-header-bar" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Top Header Bar: Stats, Install WebApp, Fullscreen & Sound */}
+        <div className="start-header-bar" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#94a3b8' }}>
             <Trophy size={15} color="#f59e0b" />
             <span>Kills: <strong style={{ color: '#fff' }}>{stats.kills}</strong></span>
@@ -116,25 +138,78 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
             <span>Partidas: <strong style={{ color: '#fff' }}>{stats.matches}</strong></span>
           </div>
 
-          <button
-            onClick={toggleAudio}
-            type="button"
-            style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '10px',
-              padding: '4px 8px',
-              color: '#f8fafc',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '11px',
-            }}
-          >
-            {audioEnabled ? <Volume2 size={14} color="#34d399" /> : <VolumeX size={14} color="#ef4444" />}
-            <span>{audioEnabled ? 'Sonido ON' : 'Mute'}</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Install WebApp button */}
+            {!isStandalone() && (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowInstallModal(true);
+                }}
+                type="button"
+                title="Instalar como aplicación en tu pantalla de inicio"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(67, 56, 202, 0.35) 100%)',
+                  border: '1px solid rgba(129, 140, 248, 0.4)',
+                  borderRadius: '10px',
+                  padding: '4px 9px',
+                  color: '#e0e7ff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                }}
+              >
+                <Download size={13} color="#818cf8" />
+                <span>Instalar App</span>
+              </button>
+            )}
+
+            {/* Fullscreen Button */}
+            <button
+              onClick={handleToggleFullscreen}
+              type="button"
+              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla Completa'}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '10px',
+                padding: '4px 8px',
+                color: '#f8fafc',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+              }}
+            >
+              {fullscreen ? <Minimize size={13} color="#38bdf8" /> : <Maximize size={13} color="#38bdf8" />}
+              <span className="start-fullscreen-label">{fullscreen ? 'Ventana' : 'Pantalla Completa'}</span>
+            </button>
+
+            {/* Sound Toggle */}
+            <button
+              onClick={toggleAudio}
+              type="button"
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '10px',
+                padding: '4px 8px',
+                color: '#f8fafc',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+              }}
+            >
+              {audioEnabled ? <Volume2 size={13} color="#34d399" /> : <VolumeX size={13} color="#ef4444" />}
+              <span>{audioEnabled ? 'Sonido' : 'Mute'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Title Logo */}

@@ -1,8 +1,9 @@
 import { difficultyLabel } from '@shared/gameplay';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameEvent, MapType, PlayerState, RoomState, MAP_INFO } from '@shared/types';
-import { Heart, Shield, Zap, Flame, Trophy, Volume2, VolumeX, Clock, Wifi } from 'lucide-react';
+import { Heart, Shield, Zap, Flame, Trophy, Volume2, VolumeX, Clock, Wifi, Maximize, Minimize } from 'lucide-react';
 import { soundManager } from '../engine/SoundEffects';
+import { toggleFullscreen, isFullscreen } from '../utils/pwa';
 
 interface GameHUDProps {
   roomState: RoomState | null;
@@ -15,6 +16,23 @@ interface GameHUDProps {
 
 export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed, ping, cinematic, onQualityChange }) => {
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [fullscreen, setFullscreen] = useState(isFullscreen());
+
+  useEffect(() => {
+    const onFullscreenChange = () => setFullscreen(isFullscreen());
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = async () => {
+    soundManager.playClick();
+    const res = await toggleFullscreen();
+    setFullscreen(res);
+  };
 
   if (!roomState) return null;
 
@@ -325,8 +343,27 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
             </div>
 
             <button
+              onClick={handleToggleFullscreen}
+              className="glass-panel"
+              title={fullscreen ? 'Salir de pantalla completa' : 'Pantalla Completa'}
+              style={{
+                borderRadius: '10px',
+                padding: '4px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: '#38bdf8',
+                cursor: 'pointer',
+                border: 'none',
+              }}
+            >
+              {fullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+            </button>
+
+            <button
               onClick={toggleAudio}
               className="glass-panel"
+              title={audioEnabled ? 'Silenciar sonido' : 'Activar sonido'}
               style={{
                 borderRadius: '10px',
                 padding: '4px 8px',
