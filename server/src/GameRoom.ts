@@ -1,6 +1,10 @@
 import { BotController } from './ai/BotController.js';
 import { ExperienceDirector } from './ai/ExperienceDirector.js';
-import { WebSocket } from 'ws';
+
+export interface GameSocket {
+  readyState: number;
+  send(data: string): void;
+}
 import {
   BombState,
   BombType,
@@ -29,7 +33,7 @@ export class GameRoom {
   roundOverTimer = 0;
 
   players = new Map<string, PlayerState>();
-  sockets = new Map<string, WebSocket>();
+  sockets = new Map<string, GameSocket>();
   playerInputs = new Map<string, ClientInputState>();
   bombs = new Map<string, BombState>();
   crates = new Map<string, CrateItem>();
@@ -119,7 +123,7 @@ export class GameRoom {
 
   addPlayer(
     id: string,
-    ws: WebSocket,
+    ws: GameSocket,
     name: string,
     character: CharacterType,
     color: string,
@@ -978,7 +982,7 @@ export class GameRoom {
     });
 
     for (const ws of this.sockets.values()) {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === 1) { // 1 === WebSocket.OPEN
         ws.send(message);
       }
     }

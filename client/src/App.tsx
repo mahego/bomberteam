@@ -7,6 +7,7 @@ import { GameHUD } from './components/GameHUD';
 import { DeathScreen } from './components/DeathScreen';
 import { RoundEndModal } from './components/RoundEndModal';
 import { MobileControls } from './components/MobileControls';
+import { LandscapeOrientationModal } from './components/LandscapeOrientationModal';
 
 export const App: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,6 +142,9 @@ export const App: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Landscape Orientation Prompt for Mobile devices */}
+      <LandscapeOrientationModal />
     </div>
   );
 };

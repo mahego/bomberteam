@@ -132,9 +132,71 @@ body, html {
   filter: brightness(1.28) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6));
 }
 
-/* Keep combat controls clear of the play area on small touch screens. */
-@media (max-width: 700px) {
-  .combat-desktop-help, .combat-leaderboard { display: none !important; }
+/* Keep combat controls clear of the play area on small touch screens & mobile landscape */
+@media (max-width: 900px), (max-height: 540px) {
+  .combat-desktop-help { display: none !important; }
+}
+
+/* Mobile Landscape Specialization */
+@media (orientation: landscape) and (max-height: 540px) {
+  /* Safe-area bounded HUD */
+  .hud-container {
+    padding: max(6px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+  }
+  .hud-player-badge {
+    min-width: 170px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
+  }
+  .hud-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+  }
+  .hud-player-name {
+    font-size: 13px !important;
+  }
+  .hud-timer-badge {
+    padding: 4px 12px !important;
+  }
+  .hud-timer-time {
+    font-size: 16px !important;
+  }
+  .hud-leaderboard-preview {
+    padding: 4px 10px !important;
+    gap: 6px !important;
+  }
+  .hud-quality-toggle {
+    top: 60px !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+    padding: 3px 6px !important;
+    font-size: 9px !important;
+  }
+  .hud-killfeed {
+    max-height: 80px !important;
+    overflow: hidden !important;
+  }
+
+  /* Optimized Mobile Joystick for Landscape thumbs */
+  .combat-joystick {
+    left: max(14px, env(safe-area-inset-left)) !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    width: 116px !important;
+    height: 116px !important;
+    transform: scale(0.92) !important;
+    transform-origin: bottom left !important;
+  }
+
+  /* Optimized Mobile Combat Actions Cluster for Landscape right thumb */
+  .combat-actions {
+    right: max(14px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    transform: scale(0.85) !important;
+    transform-origin: bottom right !important;
+  }
+}
+
+@media (max-width: 650px) and (orientation: portrait) {
   .combat-actions { right: 8px !important; bottom: 12px !important; transform: scale(.72); transform-origin: bottom right; }
   .combat-joystick { left: 8px !important; bottom: 12px !important; transform: scale(.75); transform-origin: bottom left; }
 }

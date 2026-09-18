@@ -148,10 +148,21 @@ export class GameEngine {
   }
 
   connect(playerName: string, character: CharacterType, color: string) {
-    // Determine WebSocket host URL
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // In dev, Vite proxies /ws to :3001. If accessed directly on port, connect to :3001 or current host
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    // Determine WebSocket host URL with optional query param or localStorage override
+    let wsUrl: string;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const customWs = urlParams.get('ws') || urlParams.get('server') || localStorage.getItem('bomberteam_server_url');
+      if (customWs) {
+        wsUrl = customWs;
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.host}/ws`;
+      }
+    } catch {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${protocol}//${window.location.host}/ws`;
+    }
 
     console.log(`[Client] Connecting to WebSocket at ${wsUrl}...`);
     this.ws = new WebSocket(wsUrl);

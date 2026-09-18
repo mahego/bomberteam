@@ -37,7 +37,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
   const myRank = roomState.leaderboard.findIndex((e) => e.id === myPlayer?.id) + 1;
 
   return (
-    <div style={{
+    <div className="hud-container" style={{
       position: 'absolute',
       inset: 0,
       pointerEvents: 'none',
@@ -47,14 +47,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
       justifyContent: 'space-between',
       zIndex: 20,
     }}>
-      <button onClick={onQualityChange} title="Alternar calidad gráfica" aria-label={`Gráficos: ${cinematic ? 'Cine' : 'Rendimiento'}`} style={{ position: 'absolute', left: 16, top: 124, zIndex: 25, pointerEvents: 'auto', background: '#182637', border: '1px solid #43536a', borderRadius: 7, color: '#dce8f5', padding: '5px 8px', fontSize: 10, cursor: 'pointer' }}>
+      <button className="hud-quality-toggle" onClick={onQualityChange} title="Alternar calidad gráfica" aria-label={`Gráficos: ${cinematic ? 'Cine' : 'Rendimiento'}`} style={{ position: 'absolute', left: 16, top: 124, zIndex: 25, pointerEvents: 'auto', background: '#182637', border: '1px solid #43536a', borderRadius: 7, color: '#dce8f5', padding: '5px 8px', fontSize: 10, cursor: 'pointer' }}>
         {cinematic ? '◈ CINE' : '◇ RENDIMIENTO'}
       </button>
       {/* Top Row: Player Bar, Round Timer, Top Leaderboard */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
         {/* Top-Left: Player Badge */}
         {myPlayer && (
-          <div className="glass-panel" style={{
+          <div className="glass-panel hud-player-badge" style={{
             borderRadius: '16px',
             padding: '10px 16px',
             display: 'flex',
@@ -64,7 +64,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
             pointerEvents: 'auto',
           }}>
             {/* Color Avatar */}
-            <div style={{
+            <div className="hud-avatar" style={{
               width: '42px',
               height: '42px',
               borderRadius: '12px',
@@ -86,7 +86,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
             {/* Name and Health Bar */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 800, fontSize: '15px', color: '#ffffff' }}>
+                <span className="hud-player-name" style={{ fontWeight: 800, fontSize: '15px', color: '#ffffff' }}>
                   {myPlayer.name}
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>
@@ -199,7 +199,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
         )}
 
         {/* Top-Center: Match Timer, Arena Name & Tournament Fighters count */}
-        <div className="glass-panel" style={{
+        <div className="glass-panel hud-timer-badge" style={{
           borderRadius: '16px',
           padding: '8px 18px',
           display: 'flex',
@@ -223,7 +223,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
             fontSize: '20px',
             fontWeight: 900,
             color: roomState.timeRemaining < 30 ? '#ef4444' : '#f8fafc',
-          }} className={roomState.timeRemaining < 30 ? 'glow-pulse' : ''}>
+          }} className={`hud-timer-time ${roomState.timeRemaining < 30 ? 'glow-pulse' : ''}`}>
             <Clock size={18} />
             <span>{timeFormatted}</span>
           </div>
@@ -241,7 +241,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
           </div>
         </div>
 
-        <div className="adaptive-badge" style={{ position: 'absolute', top: 90, left: 16, fontSize: 11, color: '#a5f3fc', background: 'rgba(15,23,42,.85)', padding: '7px 10px', borderRadius: 10 }}>
+        <div className="adaptive-badge combat-desktop-help" style={{ position: 'absolute', top: 90, left: 16, fontSize: 11, color: '#a5f3fc', background: 'rgba(15,23,42,.85)', padding: '7px 10px', borderRadius: 10 }}>
           IA · {difficultyLabel(roomState.difficulty ?? 0.08)}
           {(myPlayer?.spawnGrace ?? 0) > 0 && <span> · Protección {Math.ceil(myPlayer!.spawnGrace!)} s</span>}
         </div>
@@ -343,7 +343,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
           </div>
 
           {/* Leaderboard Table */}
-          <div className="glass-panel" style={{
+          <div className="glass-panel hud-leaderboard-preview combat-leaderboard" style={{
             borderRadius: '16px',
             padding: '10px 14px',
             minWidth: '200px',
@@ -459,7 +459,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ roomState, myPlayer, killFeed,
       )}
 
       {/* Middle-Right: Kill Feed */}
-      <div style={{
+      <div className="hud-killfeed" style={{
         alignSelf: 'flex-end',
         display: 'flex',
         flexDirection: 'column',
