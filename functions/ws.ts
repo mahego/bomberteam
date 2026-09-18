@@ -8,6 +8,7 @@ interface PagesContext {
 }
 
 // Cloudflare Pages Function handling /ws
+// Bi-directional WebSocket proxy to persistent central backend so PC and Mobile sessions share the exact same room
 export const onRequest = async (context: PagesContext): Promise<Response> => {
   const req = context.request;
   const upgradeHeader = req.headers.get('Upgrade');
@@ -16,6 +17,69 @@ export const onRequest = async (context: PagesContext): Promise<Response> => {
     return new Response('Expected WebSocket Upgrade header', { status: 426 });
   }
 
+  // 1. Forward to the persistent central multiplayer server on Fly.io
+  try {
+    const backendHeaders = new Headers(req.headers);
+    backendHeaders.set('Host', 'bomberteam-server.fly.dev');
+
+    const originResponse = await fetch('https://bomberteam-server.fly.dev/ws', {
+      method: 'GET',
+      headers: backendHeaders,
+    });
+
+    const originWs = (originResponse as any).webSocket;
+    if (originResponse.status === 101 && originWs) {
+      // @ts-ignore
+      const pair = new WebSocketPair();
+      const [client, server] = Object.values(pair) as [any, any];
+
+      server.accept();
+      originWs.accept();
+
+      server.addEventListener('message', (event: any) => {
+        try {
+          originWs.send(event.data);
+        } catch {}
+      });
+      originWs.addEventListener('message', (event: any) => {
+        try {
+          server.send(event.data);
+        } catch {}
+      });
+
+      server.addEventListener('close', (event: any) => {
+        try {
+          originWs.close(event.code, event.reason);
+        } catch {}
+      });
+      originWs.addEventListener('close', (event: any) => {
+        try {
+          server.close(event.code, event.reason);
+        } catch {}
+      });
+
+      server.addEventListener('error', () => {
+        try {
+          originWs.close(1011, 'Client error');
+        } catch {}
+      });
+      originWs.addEventListener('error', () => {
+        try {
+          server.close(1011, 'Origin error');
+        } catch {}
+      });
+
+      return new Response(null, {
+        status: 101,
+        // @ts-ignore
+        webSocket: client,
+      });
+    }
+  } catch (err) {
+    console.warn('[CF Pages] Proxy to central server failed, using edge room fallback:', err);
+  }
+
+  // 2. Fallback: Edge isolate room
   // @ts-ignore Cloudflare Workers WebSocketPair
   const webSocketPair = new WebSocketPair();
   const [client, server] = Object.values(webSocketPair) as [any, any];
@@ -50,7 +114,6 @@ export const onRequest = async (context: PagesContext): Promise<Response> => {
           mapType: room.mapType,
         };
         server.send(JSON.stringify(initMsg));
-        console.log(`[CF Worker] Player "${player.name}" (${playerId}) joined room ${room.id}`);
       } else if (msg.type === 'input') {
         if (currentRoom) {
           currentRoom.handleInput(playerId, {
@@ -90,13 +153,8 @@ export const onRequest = async (context: PagesContext): Promise<Response> => {
   server.addEventListener('close', () => {
     if (currentRoom) {
       currentRoom.removePlayer(playerId);
-      console.log(`[CF Worker] Player ${playerId} left room ${currentRoom.id}`);
       matchmaker.cleanupEmptyRooms();
     }
-  });
-
-  server.addEventListener('error', (err: any) => {
-    console.error(`[CF Worker] WebSocket error on ${playerId}:`, err);
   });
 
   return new Response(null, {

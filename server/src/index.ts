@@ -113,6 +113,6 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 [Server] BomberTeam WebSocket Server running on http://localhost:${PORT}/ws`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 [Server] BomberTeam WebSocket Server running on port ${PORT} (/ws)`);
 });

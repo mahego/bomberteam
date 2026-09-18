@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { WebSocket } from 'ws';
 
 test('WebSocket integration: player joins, receives Torneo del Poder snapshot with crates and powerups', async () => {
-  const ws = new WebSocket('ws://localhost:3001/ws');
+  const ws = new WebSocket('ws://127.0.0.1:3001/ws');
 
   await new Promise<void>((resolve, reject) => {
     ws.on('open', () => resolve());

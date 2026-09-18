@@ -149,58 +149,79 @@ export class GameEngine {
 
   connect(playerName: string, character: CharacterType, color: string) {
     // Determine WebSocket host URL with optional query param or localStorage override
-    let wsUrl: string;
+    let initialUrl: string;
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const customWs = urlParams.get('ws') || urlParams.get('server') || localStorage.getItem('bomberteam_server_url');
       if (customWs) {
-        wsUrl = customWs;
-      } else {
+        initialUrl = customWs;
+      } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${protocol}//${window.location.host}/ws`;
+        initialUrl = `${protocol}//${window.location.host}/ws`;
+      } else {
+        // Direct to persistent central server so mobile and PC sessions join the same room
+        initialUrl = 'wss://bomberteam-server.fly.dev/ws';
       }
     } catch {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsUrl = `${protocol}//${window.location.host}/ws`;
+      initialUrl = `${protocol}//${window.location.host}/ws`;
     }
 
-    console.log(`[Client] Connecting to WebSocket at ${wsUrl}...`);
-    this.ws = new WebSocket(wsUrl);
+    const setupSocket = (url: string, isRetry = false) => {
+      console.log(`[Client] Connecting to WebSocket at ${url}...`);
+      const socket = new WebSocket(url);
+      this.ws = socket;
+      let hasOpened = false;
 
-    this.ws.onopen = () => {
-      console.log('[Client] Connected to server!');
-      this.onConnected?.();
+      socket.onopen = () => {
+        hasOpened = true;
+        console.log(`[Client] Connected to server at ${url}!`);
+        this.onConnected?.();
 
-      const joinMsg: ClientMessage = {
-        type: 'join',
-        experienceSeconds: readProfile().experienceSeconds,
-        name: playerName,
-        character,
-        color,
+        const joinMsg: ClientMessage = {
+          type: 'join',
+          experienceSeconds: readProfile().experienceSeconds,
+          name: playerName,
+          character,
+          color,
+        };
+        this.send(joinMsg);
+        this.startPingLoop();
       };
-      this.send(joinMsg);
-      this.startPingLoop();
+
+      socket.onmessage = (event) => {
+        try {
+          const msg: ServerMessage = JSON.parse(event.data);
+          this.handleServerMessage(msg);
+        } catch (err) {
+          console.error('[Client] Message parse error:', err);
+        }
+      };
+
+      socket.onclose = () => {
+        if (!hasOpened && !isRetry && url.includes('fly.dev')) {
+          console.log('[Client] Primary connection failed, retrying via Cloudflare proxy...');
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          setupSocket(`${protocol}//${window.location.host}/ws`, true);
+          return;
+        }
+        console.log('[Client] Disconnected from server');
+        this.destroy();
+        this.onDisconnected?.();
+      };
+
+      socket.onerror = (err) => {
+        console.error('[Client] WebSocket error:', err);
+        if (!hasOpened && !isRetry && url.includes('fly.dev')) {
+          console.log('[Client] Primary connection error, retrying via Cloudflare proxy...');
+          socket.close();
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          setupSocket(`${protocol}//${window.location.host}/ws`, true);
+        }
+      };
     };
 
-    this.ws.onmessage = (event) => {
-      try {
-        const msg: ServerMessage = JSON.parse(event.data);
-        this.handleServerMessage(msg);
-      } catch (err) {
-        console.error('[Client] Message parse error:', err);
-      }
-    };
-
-    this.ws.onclose = () => {
-      console.log('[Client] Disconnected from server');
-      this.destroy();
-      this.onDisconnected?.();
-    };
-
-    this.ws.onerror = (err) => {
-      console.error('[Client] WebSocket error:', err);
-    };
-
+    setupSocket(initialUrl);
     this.startRenderLoop();
   }
 
