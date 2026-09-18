@@ -90,16 +90,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
   };
 
   return (
-    <div style={{
-      position: 'absolute',
-      inset: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'radial-gradient(circle at center, #1e1b4b 0%, #090d16 100%)',
-      zIndex: 50,
-      padding: '16px',
-    }}>
+    <div className="start-screen-wrapper">
       {/* Background animated floating bombs */}
       <div style={{
         position: 'absolute',
@@ -115,67 +106,57 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
       </div>
 
       {/* Main Glass Card */}
-      <div className="glass-panel" style={{
-        width: '100%',
-        maxWidth: '540px',
-        borderRadius: '24px',
-        padding: '28px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '20px',
-        position: 'relative',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-      }}>
+      <div className="glass-panel start-card">
         {/* Top Sound Toggle & Stats */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#94a3b8' }}>
-            <Trophy size={16} color="#f59e0b" />
-            <span>Kills: <strong>{stats.kills}</strong></span>
+        <div className="start-header-bar" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#94a3b8' }}>
+            <Trophy size={15} color="#f59e0b" />
+            <span>Kills: <strong style={{ color: '#fff' }}>{stats.kills}</strong></span>
             <span style={{ opacity: 0.4 }}>•</span>
-            <span>Partidas: <strong>{stats.matches}</strong></span>
+            <span>Partidas: <strong style={{ color: '#fff' }}>{stats.matches}</strong></span>
           </div>
 
           <button
             onClick={toggleAudio}
+            type="button"
             style={{
               background: 'rgba(255, 255, 255, 0.08)',
               border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '6px 10px',
+              borderRadius: '10px',
+              padding: '4px 8px',
               color: '#f8fafc',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              fontSize: '12px',
+              fontSize: '11px',
             }}
           >
-            {audioEnabled ? <Volume2 size={16} color="#34d399" /> : <VolumeX size={16} color="#ef4444" />}
+            {audioEnabled ? <Volume2 size={14} color="#34d399" /> : <VolumeX size={14} color="#ef4444" />}
             <span>{audioEnabled ? 'Sonido ON' : 'Mute'}</span>
           </button>
         </div>
 
         {/* Title Logo */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
+        <div style={{ textAlign: 'center', width: '100%' }}>
+          <div className="start-logo-badge" style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            fontSize: '12px',
+            gap: '6px',
+            fontSize: '11px',
             textTransform: 'uppercase',
-            letterSpacing: '3px',
+            letterSpacing: '2px',
             fontWeight: 800,
             color: '#38bdf8',
             background: 'rgba(56, 189, 248, 0.12)',
-            padding: '4px 14px',
+            padding: '3px 12px',
             borderRadius: '999px',
-            marginBottom: '6px',
+            marginBottom: '4px',
           }}>
-            <Sparkles size={14} /> Caos Arcade 3D Multijugador
+            <Sparkles size={13} /> Caos Arcade 3D Multijugador
           </div>
-          <h1 className="font-arcade" style={{
-            fontSize: '44px',
+          <h1 className="font-arcade start-logo-title" style={{
+            fontSize: '40px',
             fontWeight: 900,
             letterSpacing: '1px',
             margin: 0,
@@ -188,203 +169,211 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onPlay, isConnecting }
           </h1>
 
           {/* Tournament of Power & New Powers Feature Highlight Banner */}
-          <div style={{
+          <div className="start-tournament-banner" style={{
             background: 'linear-gradient(90deg, rgba(124, 58, 237, 0.3), rgba(239, 68, 68, 0.3))',
             border: '1px solid rgba(192, 132, 252, 0.4)',
-            borderRadius: '12px',
-            padding: '8px 12px',
+            borderRadius: '10px',
+            padding: '6px 10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             fontSize: '11px',
             color: '#e0e7ff',
             width: '100%',
             justifyContent: 'center',
-            marginTop: '8px',
+            marginTop: '6px',
           }}>
-            <span style={{ fontSize: '14px' }}>🥋</span>
-            <span><strong>TORNEO DEL PODER:</strong> 48 jugadores · 🥊 Guantes x2 · 🥾 Super Salto · 📦 Cajas con Fuego, Veneno y Parálisis</span>
+            <span style={{ fontSize: '13px' }}>🥋</span>
+            <span><strong>TORNEO DEL PODER:</strong> 48 jugadores · 🥊 Guantes · 🥾 Salto · ❄️ Hielo · 📦 Cajas Elementales</span>
           </div>
 
-          <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '8px' }}>
+          <p className="start-logo-desc" style={{ fontSize: '13px', color: '#94a3b8', margin: '6px 0 0 0' }}>
             Partidas rápidas • Físicas locas • ¡Entra y juega en 10 segundos!
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handlePlaySubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Name Input with Dice */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
-              Tu Nombre de Luchador:
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                maxLength={16}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Elige tu nombre..."
-                style={{
-                  flex: 1,
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  border: '2px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '14px',
-                  padding: '12px 16px',
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  outline: 'none',
-                  transition: 'border 0.2s',
-                }}
-                onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)')}
-              />
+        {/* Form with Landscape 2-column layout */}
+        <form onSubmit={handlePlaySubmit} style={{ width: '100%' }}>
+          <div className="start-columns">
+            {/* Left Column: Name & Color */}
+            <div className="start-col-left" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Name Input with Dice */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                  Tu Nombre de Luchador:
+                </label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    maxLength={16}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Elige tu nombre..."
+                    className="start-name-input"
+                    style={{
+                      flex: 1,
+                      background: 'rgba(0, 0, 0, 0.35)',
+                      border: '2px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      outline: 'none',
+                      transition: 'border 0.2s',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#6366f1')}
+                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)')}
+                  />
+                  <button
+                    type="button"
+                    onClick={randomizeName}
+                    title="Nombre aleatorio"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: '12px',
+                      padding: '0 14px',
+                      color: '#f8fafc',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Dices size={20} color="#f59e0b" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Color Selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                  Color del Traje:
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px' }}>
+                  {COLORS.map((c) => {
+                    const isSelected = color === c.hex;
+                    return (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        onClick={() => {
+                          soundManager.playClick();
+                          setColor(c.hex);
+                        }}
+                        className="start-color-btn"
+                        style={{
+                          flex: 1,
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: c.hex,
+                          border: isSelected ? '3px solid #ffffff' : '2px solid rgba(0,0,0,0.3)',
+                          cursor: 'pointer',
+                          transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                          boxShadow: isSelected ? `0 0 14px ${c.hex}` : 'none',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title={c.name}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Character Selector & Play Button */}
+            <div className="start-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Character Selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>
+                  Elige tu Personaje:
+                </label>
+                <div className="start-char-grid" style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '8px',
+                }}>
+                  {CHARACTERS.map((char) => {
+                    const isSelected = character === char.id;
+                    return (
+                      <button
+                        key={char.id}
+                        type="button"
+                        onClick={() => {
+                          soundManager.playClick();
+                          setCharacter(char.id);
+                        }}
+                        className="start-char-btn"
+                        style={{
+                          background: isSelected ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.04)',
+                          border: isSelected ? '2px solid #818cf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '12px',
+                          padding: '8px 4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '2px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                        }}
+                      >
+                        <span className="start-char-icon" style={{ fontSize: '24px' }}>{char.icon}</span>
+                        <span className="start-char-name" style={{ fontSize: '11px', fontWeight: 700, color: isSelected ? '#ffffff' : '#94a3b8' }}>
+                          {char.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Big Play Button */}
               <button
-                type="button"
-                onClick={randomizeName}
-                title="Nombre aleatorio"
+                type="submit"
+                disabled={isConnecting}
+                className="btn-play font-arcade start-play-btn"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  width: '100%',
+                  padding: '14px',
                   borderRadius: '14px',
-                  padding: '0 16px',
-                  color: '#f8fafc',
-                  cursor: 'pointer',
+                  fontSize: '20px',
+                  fontWeight: 900,
+                  letterSpacing: '1px',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: isConnecting ? 'wait' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: '10px',
                 }}
               >
-                <Dices size={22} color="#f59e0b" />
+                {isConnecting ? (
+                  <>
+                    <Zap size={22} className="animate-spin" />
+                    <span>CONECTANDO...</span>
+                  </>
+                ) : (
+                  <>
+                    <Swords size={24} />
+                    <span>¡JUGAR AHORA!</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
-
-          {/* Character Selector */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
-              Elige tu Personaje:
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '8px',
-            }}>
-              {CHARACTERS.map((char) => {
-                const isSelected = character === char.id;
-                return (
-                  <button
-                    key={char.id}
-                    type="button"
-                    onClick={() => {
-                      soundManager.playClick();
-                      setCharacter(char.id);
-                    }}
-                    style={{
-                      background: isSelected ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.04)',
-                      border: isSelected ? '2px solid #818cf8' : '1px solid rgba(255, 255, 255, 0.08)',
-                      borderRadius: '14px',
-                      padding: '10px 6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      transform: isSelected ? 'scale(1.03)' : 'scale(1)',
-                    }}
-                  >
-                    <span style={{ fontSize: '26px' }}>{char.icon}</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: isSelected ? '#ffffff' : '#94a3b8' }}>
-                      {char.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Color Selector */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#cbd5e1', marginBottom: '8px' }}>
-              Color del Traje:
-            </label>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-              {COLORS.map((c) => {
-                const isSelected = color === c.hex;
-                return (
-                  <button
-                    key={c.hex}
-                    type="button"
-                    onClick={() => {
-                      soundManager.playClick();
-                      setColor(c.hex);
-                    }}
-                    style={{
-                      flex: 1,
-                      height: '36px',
-                      borderRadius: '10px',
-                      background: c.hex,
-                      border: isSelected ? '3px solid #ffffff' : '2px solid rgba(0,0,0,0.3)',
-                      cursor: 'pointer',
-                      transform: isSelected ? 'scale(1.12)' : 'scale(1)',
-                      boxShadow: isSelected ? `0 0 16px ${c.hex}` : 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                    title={c.name}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Big Play Button */}
-          <button
-            type="submit"
-            disabled={isConnecting}
-            className="btn-play font-arcade"
-            style={{
-              width: '100%',
-              padding: '16px',
-              borderRadius: '16px',
-              fontSize: '24px',
-              fontWeight: 900,
-              letterSpacing: '1px',
-              color: '#ffffff',
-              border: 'none',
-              cursor: isConnecting ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginTop: '6px',
-            }}
-          >
-            {isConnecting ? (
-              <>
-                <Zap size={26} className="animate-spin" />
-                <span>CONECTANDO A LA ARENA...</span>
-              </>
-            ) : (
-              <>
-                <Swords size={28} />
-                <span>¡JUGAR AHORA!</span>
-              </>
-            )}
-          </button>
         </form>
 
         {/* Quick controls help */}
-        <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 16px', fontSize: '11px', color: '#94a3b8', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: '12px' }}>
+        <div className="start-controls-help" style={{ width: '100%', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px 14px', fontSize: '11px', color: '#94a3b8', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: '10px' }}>
           <span><strong>WASD</strong> Mover · <strong>Ratón</strong> Apuntar</span>
-          <span><strong>J / clic izq.</strong> Combo ×3</span>
+          <span><strong>J / clic izq.</strong> Golpear</span>
           <span><strong>R</strong> Patada</span>
-          <span><strong>F</strong> Levantar / lanzar rival</span>
-          <span><strong>E / clic der.</strong> Sacar bomba; repetir para lanzar</span>
-          <span><strong>Q</strong> Soltar</span>
+          <span><strong>F</strong> Levantar/Lanzar</span>
+          <span><strong>E / clic der.</strong> Bomba</span>
           <span><strong>Espacio</strong> Saltar</span>
-          <span><strong>Shift + golpe</strong> Embestir al correr</span>
         </div>
       </div>
     </div>
