@@ -6,6 +6,8 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { MapType } from '@shared/types';
 
+import { isMobileDevice, getRecommendedPixelRatio } from '../../utils/device';
+
 export class RenderPipeline {
   private composer: EffectComposer;
   private bloom: UnrealBloomPass;
@@ -15,13 +17,18 @@ export class RenderPipeline {
   private sky = new THREE.HemisphereLight(0xbdd8ff, 0x1e293b, 1.35);
   private flash = new THREE.PointLight(0xffb04e, 0, 14, 2);
   private theme: MapType | null = null;
-  public cinematic = window.innerWidth > 900;
+  public cinematic = !isMobileDevice() && window.innerWidth > 900;
 
   constructor(private renderer: THREE.WebGLRenderer, private scene: THREE.Scene, camera: THREE.Camera) {
+    const isMobile = isMobileDevice();
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.cinematic ? 1.5 : 1.25));
+    renderer.setPixelRatio(getRecommendedPixelRatio(this.cinematic));
+
+    // Shadow configuration: fast BasicShadowMap 512x512 for mobile GPUs
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = isMobile ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
 
     // Fast ambient gradient environment (0 PMREM compilation lag)
     const envCanvas = document.createElement('canvas');
@@ -40,16 +47,17 @@ export class RenderPipeline {
       scene.environment = envTex;
     }
 
-    // Key shadow light with 1024x1024 map and tight bounds for high performance
+    // Key shadow light with tight bounds for high performance
+    const shadowMapSize = isMobile ? 512 : 1024;
     this.key.position.set(-18, 28, 16);
     this.key.castShadow = true;
-    this.key.shadow.mapSize.set(1024, 1024);
+    this.key.shadow.mapSize.set(shadowMapSize, shadowMapSize);
     this.key.shadow.camera.left = this.key.shadow.camera.bottom = -30;
     this.key.shadow.camera.right = this.key.shadow.camera.top = 30;
     this.key.shadow.camera.near = 4;
     this.key.shadow.camera.far = 75;
     this.key.shadow.bias = -0.0003;
-    this.key.shadow.normalBias = 0.04;
+    this.key.shadow.normalBias = isMobile ? 0.02 : 0.04;
 
     this.rim.position.set(15, 18, -22);
     scene.add(this.key, this.rim, this.sky, this.flash);
@@ -85,7 +93,7 @@ export class RenderPipeline {
 
   setQuality(cinematic: boolean) {
     this.cinematic = cinematic;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, cinematic ? 1.5 : 1.25));
+    this.renderer.setPixelRatio(getRecommendedPixelRatio(cinematic));
     this.composer.setPixelRatio(this.renderer.getPixelRatio());
     const size = this.renderer.getSize(new THREE.Vector2());
     this.resize(size.x, size.y);

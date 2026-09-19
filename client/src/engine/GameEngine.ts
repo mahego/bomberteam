@@ -65,6 +65,9 @@ export class GameEngine {
 
   // Local client prediction state
   private predictedAction: { state: Partial<PlayerState>; remaining: number } | null = null;
+  private lastHudUpdate = 0;
+  private lastMyHealth = -1;
+  private lastMyAlive = true;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -89,9 +92,6 @@ export class GameEngine {
       powerPreference: 'high-performance',
     });
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.container.appendChild(this.renderer.domElement);
 
     this.pipeline = new RenderPipeline(this.renderer, this.scene, this.camera);
@@ -182,7 +182,10 @@ export class GameEngine {
       initialUrl = `${protocol}//${window.location.host}/ws`;
     }
 
-    const setupSocket = (url: string, isRetry = false) => {
+    let retryFlyCount = 0;
+    const MAX_FLY_RETRIES = 3;
+
+    const setupSocket = (url: string, isFallback = false) => {
       console.log(`[Client] Connecting to WebSocket at ${url}...`);
       const socket = new WebSocket(url);
       this.ws = socket;
@@ -213,11 +216,32 @@ export class GameEngine {
         }
       };
 
-      socket.onclose = () => {
-        if (!hasOpened && !isRetry && url.includes('fly.dev')) {
-          console.log('[Client] Primary connection failed, retrying via Cloudflare proxy...');
+      let retried = false;
+      const handleColdStartRetryOrFallback = () => {
+        if (hasOpened || retried) return;
+        retried = true;
+        if (!isFallback && url.includes('fly.dev')) {
+          if (retryFlyCount < MAX_FLY_RETRIES) {
+            retryFlyCount++;
+            const delay = retryFlyCount * 1200;
+            console.log(`[Client] Server waking up from cold sleep (Fly.io). Retrying connection in ${delay}ms (attempt ${retryFlyCount}/${MAX_FLY_RETRIES})...`);
+            setTimeout(() => {
+              if (!hasOpened) {
+                setupSocket(url, false);
+              }
+            }, delay);
+            return;
+          }
+          console.log('[Client] Primary server took too long to wake, retrying via Cloudflare proxy...');
           const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
           setupSocket(`${protocol}//${window.location.host}/ws`, true);
+          return;
+        }
+      };
+
+      socket.onclose = () => {
+        if (!hasOpened) {
+          handleColdStartRetryOrFallback();
           return;
         }
         console.log('[Client] Disconnected from server');
@@ -227,11 +251,9 @@ export class GameEngine {
 
       socket.onerror = (err) => {
         console.error('[Client] WebSocket error:', err);
-        if (!hasOpened && !isRetry && url.includes('fly.dev')) {
-          console.log('[Client] Primary connection error, retrying via Cloudflare proxy...');
-          socket.close();
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          setupSocket(`${protocol}//${window.location.host}/ws`, true);
+        if (!hasOpened) {
+          try { socket.close(); } catch {}
+          handleColdStartRetryOrFallback();
         }
       };
     };
@@ -273,9 +295,23 @@ export class GameEngine {
       // Sync entities
       this.syncEntities(msg.state);
 
-      // Update UI HUD
+      // Update UI HUD with throttling (~11 Hz) on high-frequency state updates unless critical state changed
       const myPlayer = this.getMyPlayer();
-      this.onStateUpdate?.(msg.state, myPlayer);
+      const now = performance.now();
+      const isCritical =
+        !myPlayer ||
+        myPlayer.health !== this.lastMyHealth ||
+        myPlayer.isAlive !== this.lastMyAlive ||
+        msg.state.roundState !== 'playing';
+
+      if (isCritical || now - this.lastHudUpdate >= 90) {
+        this.lastHudUpdate = now;
+        if (myPlayer) {
+          this.lastMyHealth = myPlayer.health;
+          this.lastMyAlive = myPlayer.isAlive;
+        }
+        this.onStateUpdate?.(msg.state, myPlayer);
+      }
     } else if (msg.type === 'pong') {
       this.ping = Math.round((Date.now() - msg.clientTime) / 2);
     }
@@ -499,12 +535,12 @@ export class GameEngine {
       if (this.predictedAction.remaining <= 0) this.predictedAction = null;
     }
     this.updateAim();
-    // Send client input
+    // Send client input synchronized to server tick rate (45 Hz)
     const input = this.inputManager.getCurrentInput();
     this.inputElapsed += dt;
-    if (this.inputElapsed >= 1 / 30 || input.jump || input.punch || input.kick || input.grab || input.throwBomb || input.dropBomb) {
+    if (this.inputElapsed >= 1 / 45 || input.jump || input.punch || input.kick || input.grab || input.throwBomb || input.dropBomb) {
       this.send({ type: 'input', ...input });
-      this.inputElapsed %= 1 / 30;
+      this.inputElapsed %= 1 / 45;
     }
 
     if (this.currentRoomState) {

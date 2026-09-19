@@ -9,6 +9,8 @@ import { RoundEndModal } from './components/RoundEndModal';
 import { MobileControls } from './components/MobileControls';
 import { LandscapeOrientationModal } from './components/LandscapeOrientationModal';
 
+import { isMobileDevice } from './utils/device';
+
 export const App: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -20,7 +22,7 @@ export const App: React.FC = () => {
   const [myPlayer, setMyPlayer] = useState<PlayerState | undefined>(undefined);
   const [killFeed, setKillFeed] = useState<GameEvent[]>([]);
   const [ping, setPing] = useState(0);
-  const [cinematic, setCinematic] = useState(window.innerWidth > 900);
+  const [cinematic, setCinematic] = useState(!isMobileDevice() && window.innerWidth > 900);
 
   useEffect(() => {
     return () => {

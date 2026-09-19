@@ -1,9 +1,57 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WebSocket } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
+import http from 'node:http';
+import { matchmaker } from '../server/src/Matchmaker.js';
 
-test('WebSocket integration: player joins, receives Torneo del Poder snapshot with crates and powerups', async () => {
-  const ws = new WebSocket('ws://127.0.0.1:3001/ws');
+test('WebSocket integration: player joins, receives Torneo del Poder snapshot with crates and powerups', async (t) => {
+  let server: http.Server | null = null;
+  let port = 3001;
+
+  const isServerRunning = await new Promise<boolean>((resolve) => {
+    const testWs = new WebSocket('ws://127.0.0.1:3001/ws');
+    testWs.on('open', () => {
+      testWs.close();
+      resolve(true);
+    });
+    testWs.on('error', () => {
+      resolve(false);
+    });
+  });
+
+  if (!isServerRunning) {
+    port = 3055;
+    server = http.createServer();
+    const wss = new WebSocketServer({ server, path: '/ws' });
+    wss.on('connection', (ws: WebSocket) => {
+      const playerId = `p_test_${Math.random().toString(36).slice(2, 6)}`;
+      let currentRoom: any = null;
+
+      ws.on('message', (rawData) => {
+        const msg = JSON.parse(rawData.toString());
+        if (msg.type === 'join') {
+          currentRoom = matchmaker.findOrCreateRoom();
+          currentRoom.addPlayer(playerId, ws, msg.name, msg.character, msg.color);
+          ws.send(JSON.stringify({ type: 'init', playerId, roomId: currentRoom.id, mapType: currentRoom.mapType }));
+        }
+      });
+
+      ws.on('close', () => {
+        if (currentRoom) {
+          currentRoom.removePlayer(playerId);
+          matchmaker.cleanupEmptyRooms();
+        }
+      });
+    });
+
+    await new Promise<void>((resolve) => server!.listen(port, '127.0.0.1', () => resolve()));
+    t.after(() => {
+      server?.close();
+      matchmaker.cleanupEmptyRooms();
+    });
+  }
+
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
 
   await new Promise<void>((resolve, reject) => {
     ws.on('open', () => resolve());

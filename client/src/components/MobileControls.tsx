@@ -7,17 +7,18 @@ interface MobileControlsProps {
   isHoldingBomb?: boolean;
 }
 
+import { isMobileDevice } from '../utils/device';
+
 export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, isCarryingOpponent, isHoldingBomb }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [forceVisible, setForceVisible] = useState(false);
   const joystickBaseRef = useRef<HTMLDivElement>(null);
-  const [stickPos, setStickPos] = useState({ x: 0, y: 0 });
+  const stickKnobRef = useRef<HTMLDivElement>(null);
   const touchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
-      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      setIsMobile(hasTouch || window.innerWidth <= 1024);
+      setIsMobile(isMobileDevice() || window.innerWidth <= 1024);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -35,7 +36,13 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, is
       } catch (_) {}
     }
     touchIdRef.current = null;
-    setStickPos({ x: 0, y: 0 });
+    if (stickKnobRef.current) {
+      stickKnobRef.current.style.transition = 'transform 0.15s ease';
+      stickKnobRef.current.style.transform = 'translate3d(0px, 0px, 0px)';
+      stickKnobRef.current.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
+      stickKnobRef.current.style.background = 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)';
+    }
+    inputManager.touchSprint = false;
     inputManager.touchMove.x = 0;
     inputManager.touchMove.z = 0;
   }, [inputManager]);
@@ -58,7 +65,23 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, is
       clampedY = (dy / dist) * maxDist;
     }
 
-    setStickPos({ x: clampedX * 136 / rect.width, y: clampedY * 136 / rect.width });
+    const normalizedDist = dist / maxDist;
+    const isSprintZone = normalizedDist > 0.60;
+    inputManager.touchSprint = isSprintZone;
+
+    if (stickKnobRef.current) {
+      const stickX = (clampedX * 136) / rect.width;
+      const stickY = (clampedY * 136) / rect.width;
+      stickKnobRef.current.style.transition = 'none';
+      stickKnobRef.current.style.transform = `translate3d(${stickX}px, ${stickY}px, 0px)`;
+      if (isSprintZone) {
+        stickKnobRef.current.style.boxShadow = '0 0 24px rgba(245, 158, 11, 0.95), inset 0 2px 4px rgba(255, 255, 255, 0.6)';
+        stickKnobRef.current.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+      } else {
+        stickKnobRef.current.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
+        stickKnobRef.current.style.background = 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)';
+      }
+    }
     inputManager.touchMove.x = clampedX / maxDist;
     inputManager.touchMove.z = clampedY / maxDist;
   }, [inputManager]);
@@ -203,16 +226,19 @@ export const MobileControls: React.FC<MobileControlsProps> = ({ inputManager, is
             <div style={{ position: 'absolute', right: '6px', fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>▶</div>
 
             {/* Joystick Thumb Stick */}
-            <div style={{
-              width: '62px',
-              height: '62px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
-              border: '2px solid rgba(255, 255, 255, 0.6)',
-              boxShadow: '0 0 20px rgba(99, 102, 241, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
-              transform: `translate(${stickPos.x}px, ${stickPos.y}px)`,
-              transition: touchIdRef.current === null ? 'transform 0.15s ease' : 'none',
-            }} />
+            <div
+              ref={stickKnobRef}
+              style={{
+                width: '62px',
+                height: '62px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+                border: '2px solid rgba(255, 255, 255, 0.6)',
+                boxShadow: '0 0 20px rgba(99, 102, 241, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+                transform: 'translate3d(0px, 0px, 0px)',
+                willChange: 'transform',
+              }}
+            />
           </div>
 
           {/* Right Action Buttons Cluster */}

@@ -126,19 +126,20 @@ export class CharacterModel {
       x = 0,
       y = 0,
       z = 0,
-      parent: THREE.Object3D = this.visual
+      parent: THREE.Object3D = this.visual,
+      castShadow = false
     ) => {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(x, y, z);
-      m.castShadow = true;
-      m.receiveShadow = true;
+      m.castShadow = castShadow;
+      m.receiveShadow = false;
       parent.add(m);
       return m;
     };
 
     // 1. Torso: Athletic V-Taper (Wide shoulders, muscular chest, tapered waist)
-    // Upper Chest (V-Taper)
-    const upperChest = mesh(SHARED_GEOS.torsoUpper, this.suitMat, 0, 0.98, 0);
+    // Upper Chest (V-Taper) - Casts body shadow
+    const upperChest = mesh(SHARED_GEOS.torsoUpper, this.suitMat, 0, 0.98, 0, this.visual, true);
     mesh(SHARED_GEOS.collarBone, this.darkMat, 0, 1.15, 0.16);
 
     // Defined Pectoral Contours
@@ -163,8 +164,8 @@ export class CharacterModel {
     this.headGroup.position.set(0, 1.42, 0);
     this.visual.add(this.headGroup);
 
-    // Sculpted Cranium & Contoured Jawline
-    const cranium = mesh(SHARED_GEOS.headCranium, this.skinMat, 0, 0.08, 0, this.headGroup);
+    // Sculpted Cranium & Contoured Jawline - Casts head shadow
+    const cranium = mesh(SHARED_GEOS.headCranium, this.skinMat, 0, 0.08, 0, this.headGroup, true);
     cranium.scale.set(
       this.characterType === 'alien' ? 1.15 : 1.0,
       this.characterType === 'robot' ? 0.95 : 1.04,
@@ -236,8 +237,8 @@ export class CharacterModel {
       legGroup.position.set(side * 0.20, 0.48, 0);
       this.visual.add(legGroup);
 
-      // Muscular Thigh (Quads)
-      mesh(SHARED_GEOS.thigh, this.darkMat, 0, -0.15, 0.01, legGroup);
+      // Muscular Thigh (Quads) - Casts leg shadow
+      mesh(SHARED_GEOS.thigh, this.darkMat, 0, -0.15, 0.01, legGroup, true);
 
       // Articulated Knee Cap
       mesh(SHARED_GEOS.kneePad, this.suitMat, 0, -0.32, 0.08, legGroup);
@@ -403,13 +404,18 @@ export class CharacterModel {
       return;
     }
 
-    // 1. Position and Rotation Interpolation
-    const target = new THREE.Vector3(player.x, player.y, player.z);
+    // 1. Position and Rotation Interpolation with Dead-Reckoning Extrapolation
+    // Compensates network snapshot latency so the character renders in the present moment
+    const extrapolateTime = isLocal ? 0.035 : 0.02;
+    const targetX = player.x + (player.vx || 0) * extrapolateTime;
+    const targetZ = player.z + (player.vz || 0) * extrapolateTime;
+    const target = new THREE.Vector3(targetX, player.y, targetZ);
+
     if (!this.initialized || this.group.position.distanceToSquared(target) > 100) {
       this.group.position.copy(target);
       this.initialized = true;
     } else {
-      const posLerp = isLocal ? 60 : 24;
+      const posLerp = isLocal ? 80 : 28;
       this.group.position.lerp(target, 1 - Math.exp(-posLerp * dt));
     }
 
@@ -417,7 +423,7 @@ export class CharacterModel {
       Math.sin(player.rotY - this.group.rotation.y),
       Math.cos(player.rotY - this.group.rotation.y)
     );
-    const rotLerp = isLocal ? 55 : 22;
+    const rotLerp = isLocal ? 90 : 25;
     this.group.rotation.y += angle * (1 - Math.exp(-rotLerp * dt));
 
     this.animationTime += dt;

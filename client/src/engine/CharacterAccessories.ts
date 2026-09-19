@@ -120,7 +120,7 @@ export function buildCharacterAccessories(type: CharacterType) {
   const cloth = new THREE.MeshStandardMaterial({ color: type === 'ninja' ? 0x172033 : type === 'pirate' ? 0x70233c : 0x926239, roughness: 0.85 });
   const accent = new THREE.MeshStandardMaterial({ color: 0xf6c65b, roughness: 0.4, metalness: 0.4 });
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
-    const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); mesh.castShadow = true; group.add(mesh); return mesh;
+    const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); mesh.castShadow = false; group.add(mesh); return mesh;
   };
   if (type === 'robot') {
     for (const side of [-1, 1]) {

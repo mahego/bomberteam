@@ -35,13 +35,27 @@ export class Matchmaker {
         (p) => !p.id.startsWith('bot_')
       ).length;
 
-      // Keep at least one room alive always
-      if (realPlayerCount === 0 && this.rooms.size > 1) {
+      // When no real players remain, stop its physics/bot loop and free resources
+      if (realPlayerCount === 0) {
         room.stop();
         this.rooms.delete(id);
-        console.log(`[Matchmaker] Cleaned up empty room: ${id}`);
+        console.log(`[Matchmaker] Cleaned up empty room without real players: ${id}`);
       }
     }
+  }
+
+  getTotalRealPlayers(): number {
+    let total = 0;
+    for (const room of this.rooms.values()) {
+      total += Array.from(room.players.values()).filter(
+        (p) => !p.id.startsWith('bot_')
+      ).length;
+    }
+    return total;
+  }
+
+  getActiveRoomCount(): number {
+    return this.rooms.size;
   }
 }
 

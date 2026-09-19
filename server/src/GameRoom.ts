@@ -921,9 +921,11 @@ export class GameRoom {
       }
     }
 
-    // Broadcast snapshot to all connected clients
-    this.broadcastSnapshot();
-    this.recentEvents = []; // Clear events after broadcast
+    // Broadcast snapshot to all connected clients (22.5 Hz network rate or immediate on combat events)
+    if (this.tickCount % 2 === 0 || this.recentEvents.length > 0) {
+      this.broadcastSnapshot();
+      this.recentEvents = []; // Clear events after broadcast
+    }
   }
 
   private broadcastSnapshot() {
